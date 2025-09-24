@@ -7,15 +7,31 @@ import (
 	"os"
 	"os/signal"
 
-	gw "github.com/phuclaits/gRPC-portfolio-editor/gateway"
+	gw "github.com/phuclaits/gRPC-portfolio-editor/internal/gateway"
 )
 
 func main() {
-	brokers := []string{"localhost:9092"}
+	ctx := context.Background()
+
+	brokers := []string{"127.0.0.1:9092"}
 	topic := "portfolio-updates"
 	groupID := "gateway-group"
 
 	kafkaClient := gw.NewKafkaClient(brokers, topic, groupID)
+
+	err := kafkaClient.Ping()
+	if err != nil {
+		log.Fatalf(">>>>>>>>>>>>>>>>Không kết nối được Kafka: %v <<<<<<<<<<<", err)
+	} else {
+		log.Println("================ Kết nối Kafka thành công ================")
+	}
+
+	redisClient := gw.NewRedisClient("127.0.0.1:6379", "", 0)
+	if err := redisClient.Ping(ctx); err != nil {
+		log.Fatalf(">>>>>>>>>>>>>>>> Không kết nối được Redis: %v <<<<<<<<<<<", err)
+	} else {
+		log.Println("================ Kết nối Redis thành công ================")
+	}
 
 	hub := gw.NewHub()
 	go hub.Run()
@@ -23,7 +39,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Nhận từ Kafka → push WS
+	
 	gw.ConnectKafkaToWebsocket(ctx, hub, kafkaClient)
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
