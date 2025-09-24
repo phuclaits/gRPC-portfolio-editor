@@ -13,6 +13,15 @@ type KafkaClient struct {
 	Reader *kafka.Reader
 }
 
+func (k *KafkaClient) Ping() error {
+	conn, err := kafka.DialLeader(context.Background(), "tcp", k.Reader.Config().Brokers[0], k.Reader.Config().Topic, 0)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	return nil
+}
+
 func NewKafkaClient(broker []string, topic string, groupID string) *KafkaClient {
 	writer := &kafka.Writer{
 		Addr:         kafka.TCP(broker...),
@@ -22,12 +31,12 @@ func NewKafkaClient(broker []string, topic string, groupID string) *KafkaClient 
 		Async:        false,
 	}
 	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:  broker,
-		Topic:    topic,
-		GroupID:  groupID,
+		Brokers:        broker,
+		Topic:          topic,
+		GroupID:        groupID,
 		CommitInterval: time.Second,
-		MinBytes: 10e3,
-		MaxBytes: 10e6,
+		MinBytes:       10e3,
+		MaxBytes:       10e6,
 	})
 	return &KafkaClient{
 		Writer: writer,
