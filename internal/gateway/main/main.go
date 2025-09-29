@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/signal"
 
-	gw "github.com/phuclaits/gRPC-portfolio-editor/internal/gateway"
+	gw "gRPC-portfolio-editor/internal/gateway"
 )
 
 func main() {
@@ -39,7 +39,6 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	
 	gw.ConnectKafkaToWebsocket(ctx, hub, kafkaClient)
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
